@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+  <title>MAXIMUS — AI Assistant</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="bg-grid"></div><div class="bg-glow"></div>
+<canvas id="particleCanvas"></canvas>
+<div class="hud-corner tl"></div><div class="hud-corner tr"></div>
+<div class="hud-corner bl"></div><div class="hud-corner br"></div>
+
+<!-- ═══ TOPBAR ═══ -->
+<header class="topbar">
+  <div class="logo-wrap">
+    <div class="logo-ring"><div class="logo-m">M</div></div>
+    <div class="logo-text">
+      <span class="logo-name">MAXIMUS</span>
+      <span class="logo-sub">AI CORE v9.0</span>
+    </div>
+  </div>
+  <div class="topbar-center">
+    <div id="timeDisplay" class="clock-time">--:--:--</div>
+    <div id="dateDisplay" class="clock-date">Loading…</div>
+  </div>
+  <div class="topbar-right">
+    <div class="badge-wrap">
+      <span class="status-dot" id="listenDot"></span>
+      <span class="status-label" id="listenLabel">STANDBY</span>
+    </div>
+    <select class="lang-select" onchange="setLanguage(this.value)" title="Language">
+      <option value="en-IN">🇮🇳 English</option>
+      <option value="hi-IN">हिंदी</option>
+      <option value="ta-IN">தமிழ்</option>
+      <option value="te-IN">తెలుగు</option>
+      <option value="kn-IN">ಕನ್ನಡ</option>
+      <option value="ml-IN">മലയാളം</option>
+      <option value="mr-IN">मराठी</option>
+      <option value="gu-IN">ગુજરાતી</option>
+      <option value="bn-IN">বাংলা</option>
+      <option value="pa-IN">ਪੰਜਾਬੀ</option>
+      <option value="en-US">🇺🇸 US</option>
+    </select>
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+  </div>
+</header>
+
+<!-- ═══ LAYOUT ═══ -->
+<main class="layout">
+
+<!-- ══ LEFT PANEL ══ -->
+<aside class="panel left-panel" id="leftPanel">
+  <button class="panel-close" onclick="toggleMobileMenu()">✕</button>
+
+  <div class="panel-hd"><span class="ph-dot">◈</span> MEMORY <span class="mem-badge" id="memCount">0</span></div>
+  <div class="memory-list" id="memoryList"><div class="mem-empty">No memories.<br>Say "Remember…"</div></div>
+
+  <div class="panel-hd mt16"><span class="ph-dot">◉</span> ALARMS <button class="add-btn" onclick="showAlarmModal()">＋</button></div>
+  <div class="alarm-list" id="alarmList"><div class="mem-empty">No alarms.<br>Say "Set alarm for 7am"</div></div>
+
+  <div class="panel-hd mt16"><span class="ph-dot">◈</span> CONTACTS <button class="add-btn" onclick="showContactModal()">＋</button></div>
+  <div class="contacts-list" id="contactsList"><div class="mem-empty">No contacts yet.</div></div>
+
+  <div class="panel-hd mt16"><span class="ph-dot">◉</span> QUICK LAUNCH</div>
+  <div class="qa-grid">
+    <button class="qa-btn" onclick="quickAction('Open Google')">🌐 Google</button>
+    <button class="qa-btn" onclick="quickAction('Open YouTube')">▶ YouTube</button>
+    <button class="qa-btn" onclick="quickAction('Open WhatsApp')">💬 WhatsApp</button>
+    <button class="qa-btn" onclick="quickAction('play songs on spotify')">🎵 Spotify</button>
+    <button class="qa-btn" onclick="quickAction('Open ChatGPT')">🤖 ChatGPT</button>
+    <button class="qa-btn" onclick="quickAction('Open VS Code')">💻 VS Code</button>
+    <button class="qa-btn" onclick="quickAction('Open Gmail')">📧 Gmail</button>
+    <button class="qa-btn" onclick="quickAction('weather in Mumbai')">🌤️ Weather</button>
+    <button class="qa-btn" onclick="quickAction('Open Instagram')">📸 Instagram</button>
+    <button class="qa-btn" onclick="quickAction('Open Calculator')">🔢 Calc</button>
+    <button class="qa-btn" onclick="quickAction('show nearby restaurants')">📍 Nearby</button>
+    <button class="qa-btn" onclick="quickAction('my calendar today')">📅 Calendar</button>
+    <button class="qa-btn" onclick="quickAction('open camera')">📸 Camera</button>
+    <button class="qa-btn" onclick="quickAction('open gmail')">📧 Gmail</button>
+    <button class="qa-btn" onclick="getMyLocation()">🗺️ My Location</button>
+    <button class="qa-btn" onclick="processInput('draw a futuristic city wallpaper')">🎨 Generate</button>
+    <button class="qa-btn" onclick="meetingStart()">📝 Start Meeting</button>
+    <button class="qa-btn" onclick="processInput('translate live to Hindi')">🌍 Translate</button>
+    <button class="qa-btn" onclick="processInput('translate hello to Tamil')">🗣 Say in Tamil</button>
+  </div>
+</aside>
+
+<!-- ══ CENTER ══ -->
+<section class="center">
+
+  <!-- ORB + STATUS (compact top row) -->
+  <div class="top-row">
+    <div class="orb-wrap">
+      <div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
+      <div class="orb-core" id="orbCore" onclick="toggleListen()">
+        <div class="orb-inner"></div><div class="orb-eye"></div>
+      </div>
+      <div class="orb-wave" id="orbWave"></div>
+    </div>
+
+    <div class="status-center">
+      <div class="state-main" id="stateText">SAY "MAXIMUS [COMMAND]"</div>
+      <div class="state-sub" id="stateSub">Passive monitoring — listening for wake word</div>
+      <div class="waveform">
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      </div>
+    </div>
+
+    <div class="transcript-box">
+      <span class="tr-label">LIVE TRANSCRIPT</span>
+      <div class="tr-content" id="transcriptContent">Waiting…</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       CHAT LOG — full size, takes all available space
+  ══════════════════════════════════ -->
+  <div class="chat-log" id="chatLog"></div>
+
+  <!-- ═══════════════════════════════
+       INTEGRATED INPUT BAR
+       📎 file upload | text input | 🎤 mic | ➤ send
+  ══════════════════════════════════ -->
+  <div class="input-area">
+
+    <!-- File slot strip — appears above input when files are uploaded -->
+    <div class="file-strip" id="fileStrip" style="display:none">
+      <div class="file-strip-slots" id="fileSlotList"></div>
+      <button class="fs-clear-all" onclick="clearFiles()" title="Clear all files">✕ Clear</button>
+    </div>
+
+    <!-- Main input row -->
+    <div class="input-row">
+      <!-- 📎 Upload button (hidden file input) -->
+      <label class="icon-btn upload-btn" title="Upload file — PDF, image, Excel, CSV, Word, PPT, code…">
+        <input type="file" id="fileInput" hidden multiple
+          accept=".pdf,.txt,.csv,.json,.xml,.html,.md,.jpg,.jpeg,.png,.gif,.webp,.bmp,.xlsx,.xls,.docx,.doc,.pptx,.ppt,.py,.js,.ts,.java,.c,.cpp,.cs,.php,.rb,.go,.sql,.sh,.log,.yaml,.yml"
+          onchange="handleFileUpload(event)">
+        📎
+      </label>
+
+      <!-- Text input -->
+      <input class="txt-input" id="textInput" type="text"
+        placeholder='Say "Maximus…" or type — ask anything, upload files…'
+        onkeydown="handleKey(event)"/>
+
+      <!-- Send -->
+      <button class="icon-btn send-btn" onclick="submitText()" title="Send">➤</button>
+
+      <!-- Camera -->
+      <button class="icon-btn cam-btn" onclick="showCameraModal()" title="Camera — take photo for AI analysis">📷</button>
+      <!-- Mic toggle -->
+      <button class="icon-btn mic-btn" id="micBtn" onclick="toggleListen()" title="Toggle microphone">🎤</button>
+    </div>
+
+    <div class="input-hint">
+      <b>"draw a futuristic city"</b> · <b>"start meeting"</b> · <b>"translate to Hindi"</b> · <b>"play song on Spotify"</b> · <b>"read my emails"</b> · <b>📎 Upload file</b>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══ RIGHT PANEL ══ -->
+<aside class="panel right-panel" id="rightPanel">
+  <div class="panel-hd"><span class="ph-dot">◈</span> SYSTEM</div>
+  <div class="sys-grid">
+    <div class="sys-row"><span>AI STATUS</span><span id="sysStatus" class="sv">CHECKING</span></div>
+    <div class="sys-row"><span>MODEL</span><span class="sv">Mistral-Small</span></div>
+    <div class="sys-row"><span>LANGUAGE</span><span class="sv" id="langDisplay">EN-IN</span></div>
+    <div class="sys-row"><span>MEMORY</span><span class="sv" id="memCountR">0</span></div>
+    <div class="sys-row"><span>ALARMS</span><span class="sv" id="alarmCount">0</span></div>
+    <div class="sys-row"><span>SESSION</span><span class="sv" id="sessionTime">0m</span></div>
+    <div class="sys-row"><span>MESSAGES</span><span class="sv" id="msgCount">0</span></div>
+  </div>
+
+  <div class="panel-hd mt16"><span class="ph-dot">◉</span> CAPABILITIES</div>
+  <div class="cap-list">
+    <div class="cap">🎙️ "Maximus [any command]"</div>
+    <div class="cap">🎵 Spotify — play/pause/skip/volume</div>
+    <div class="cap">📅 Google Calendar — real read/write</div>
+    <div class="cap">📧 Gmail — read/summarise/reply</div>
+    <div class="cap">🧠 Smart memory — learns your habits</div>
+    <div class="cap">💬 WhatsApp messages + reader</div>
+    <div class="cap">🌐 Open any website / app</div>
+    <div class="cap">📍 Maps + live navigation</div>
+    <div class="cap">📸 Camera AI analysis</div>
+    <div class="cap">💻 Code in any language</div>
+    <div class="cap">📎 Files: PDF/Excel/images</div>
+    <div class="cap">🇮🇳 All Indian languages</div>
+    <div class="cap">🎨 AI image generation (free)</div>
+    <div class="cap">📝 Auto meeting notes + transcript</div>
+    <div class="cap">🌍 Real-time live translation</div>
+  </div>
+
+  <div class="panel-hd mt16"><span class="ph-dot">◉</span> VOICE EXAMPLES</div>
+  <div class="cap-list">
+    <div class="cap cmd-ex">"play Blinding Lights on Spotify"</div>
+    <div class="cap cmd-ex">"pause / next / previous song"</div>
+    <div class="cap cmd-ex">"read my emails"</div>
+    <div class="cap cmd-ex">"add meeting tomorrow at 3pm"</div>
+    <div class="cap cmd-ex">"what's on my schedule today"</div>
+    <div class="cap cmd-ex">"what have you learned about me"</div>
+    <div class="cap cmd-ex">"open WhatsApp for Rahul"</div>
+    <div class="cap cmd-ex">"volume up / volume to 60%"</div>
+    <div class="cap cmd-ex">"what's playing"</div>
+    <div class="cap cmd-ex">"draw a futuristic city"</div>
+    <div class="cap cmd-ex">"generate a logo for my startup"</div>
+    <div class="cap cmd-ex">"create a cyberpunk wallpaper"</div>
+    <div class="cap cmd-ex">"start meeting"</div>
+    <div class="cap cmd-ex">"end meeting"</div>
+    <div class="cap cmd-ex">"translate hello world to French"</div>
+    <div class="cap cmd-ex">"translate everything to Hindi"</div>
+    <div class="cap cmd-ex">"say good morning in Tamil"</div>
+  </div>
+
+  <div class="panel-hd mt16"><span class="ph-dot">◉</span> ACTIVITY</div>
+  <div class="act-log" id="activityLog"><div class="act-item">System boot</div></div>
+
+  <div class="panel-hd mt16"><span class="ph-dot">◉</span> CONNECT SERVICES</div>
+  <div class="connect-grid">
+    <button class="connect-btn spotify-conn" onclick="spotifySignIn().then(()=>addChat('assistant','✅ Spotify connected!')).catch(()=>{})" title="Connect Spotify for real playback control">
+      <span class="conn-icon">🎵</span>
+      <span class="conn-label">Spotify</span>
+      <span class="conn-status" id="spotifyStatus">Connect</span>
+    </button>
+    <button class="connect-btn google-conn" onclick="ensureGoogle('https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.modify').then(()=>addChat('assistant','✅ Google connected! Calendar + Gmail active.')).catch(()=>{})" title="Connect Google for Calendar + Gmail">
+      <span class="conn-icon">🔗</span>
+      <span class="conn-label">Google</span>
+      <span class="conn-status" id="googleStatus">Connect</span>
+    </button>
+  </div>
+
+  <!-- Now Playing widget -->
+  <div class="now-playing-bar" id="nowPlayingBar" style="display:none">
+    <div class="np-info">
+      <span class="np-icon">🎵</span>
+      <div class="np-text">
+        <div class="np-track" id="npTrack">—</div>
+        <div class="np-artist" id="npArtist">Not playing</div>
+      </div>
+    </div>
+    <div class="np-controls">
+      <button class="np-btn" onclick="spotifyControl('prev')"  title="Previous">⏮</button>
+      <button class="np-btn" onclick="spotifyControl('pause')" title="Pause" id="npPlayBtn">⏸</button>
+      <button class="np-btn" onclick="spotifyControl('next')"  title="Next">⏭</button>
+      <button class="np-btn" onclick="spotifyVolumeDown()"     title="Vol-">🔉</button>
+      <button class="np-btn" onclick="spotifyVolumeUp()"       title="Vol+">🔊</button>
+    </div>
+  </div>
+
+  <div class="panel-hd mt16"><span class="ph-dot">◈</span> CONTROLS</div>
+  <button class="danger-btn" onclick="clearHistory()">🗑️ Clear Chat</button>
+</aside>
+
+</main><!-- end layout -->
+
+<!-- Speaking overlay -->
+<div class="speak-overlay" id="speakOverlay">
+  <div class="speak-bars"><div class="sb"></div><div class="sb"></div><div class="sb"></div><div class="sb"></div><div class="sb"></div><div class="sb"></div><div class="sb"></div></div>
+  <span class="speak-label">MAXIMUS SPEAKING</span>
+</div>
+
+<!-- ═══ CAMERA MODAL ═══ -->
+<div class="modal-overlay" id="cameraModal">
+  <div class="modal-box camera-modal-box">
+    <div class="modal-hd">📸 CAMERA — AI ANALYSIS</div>
+    <div class="modal-body" style="padding:0;gap:0">
+      <div style="position:relative;background:#000;min-height:240px;display:flex;align-items:center;justify-content:center">
+        <video id="cameraVideo" autoplay playsinline style="width:100%;max-height:340px;display:block;border-radius:0"></video>
+        <canvas id="cameraCanvas" style="display:none"></canvas>
+      </div>
+      <div id="cameraStatus" style="font-family:var(--fm);font-size:10px;color:var(--t2);text-align:center;padding:8px 14px">Starting camera…</div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="stopCamera()">✕ Close</button>
+      <button class="modal-save" id="snapBtn" onclick="snapPhoto()" disabled style="font-size:18px;padding:7px 20px">📸 Snap & Analyse</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALARM MODAL ═══ -->
+<div class="modal-overlay" id="alarmModal">
+  <div class="modal-box">
+    <div class="modal-hd">⏰ SET ALARM</div>
+    <div class="modal-body">
+      <label class="modal-label">Label</label>
+      <input class="modal-input" id="alarmLabel" placeholder="Wake up, Take medicine…"/>
+      <label class="modal-label">Time</label>
+      <input class="modal-input" id="alarmTime" type="time"/>
+      <label class="modal-label">Repeat</label>
+      <select class="modal-input" id="alarmRepeat">
+        <option value="once">Once</option><option value="daily">Daily</option>
+        <option value="weekdays">Weekdays</option><option value="weekend">Weekend</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('alarmModal')">Cancel</button>
+      <button class="modal-save" onclick="saveAlarm()">Set Alarm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONTACT MODAL ═══ -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal-box">
+    <div class="modal-hd">👤 ADD CONTACT</div>
+    <div class="modal-body">
+      <label class="modal-label">Full Name</label>
+      <input class="modal-input" id="contactName" placeholder="John, Mom, Rahul…"/>
+      <label class="modal-label">WhatsApp Number (country code + number, no spaces)</label>
+      <input class="modal-input" id="contactPhone" placeholder="919876543210  (91 = India)"/>
+      <div class="modal-note">💡 India code is 91 — enter 91 then the 10-digit number</div>
+      <label class="modal-label">Email (optional)</label>
+      <input class="modal-input" id="contactEmail" placeholder="john@gmail.com"/>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('contactModal')">Cancel</button>
+      <button class="modal-save" onclick="saveContact()">Save Contact</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EMAIL MODAL ═══ -->
+<div class="modal-overlay" id="emailModal">
+  <div class="modal-box email-modal-box">
+    <div class="modal-hd">📧 COMPOSE EMAIL</div>
+    <div class="modal-body">
+      <label class="modal-label">To</label>
+      <input class="modal-input" id="emailTo" placeholder="recipient@email.com"/>
+      <label class="modal-label">Subject</label>
+      <input class="modal-input" id="emailSubject" placeholder="Subject…"/>
+      <label class="modal-label">Body (editable)</label>
+      <textarea class="modal-input modal-textarea" id="emailBody" rows="9"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('emailModal')">Cancel</button>
+      <button class="modal-btn-copy" onclick="copyEmail()">📋 Copy</button>
+      <button class="modal-save" onclick="sendEmail()">📤 Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALARM ALERT ═══ -->
+<div class="alarm-alert" id="alarmAlert">
+  <div class="alarm-alert-inner">
+    <div class="alarm-icon">⏰</div>
+    <div class="alarm-alert-text" id="alarmAlertText">ALARM</div>
+    <button class="alarm-dismiss" onclick="dismissAlarm()">Dismiss</button>
+  </div>
+</div>
+
+<!-- Image fullscreen overlay inserted dynamically by JS -->
+<!-- Meeting status bar — shown in chat -->
+<!-- Translation live feed — shown in chat -->
+<script src="script.js?v=1772971851"></script>
+</body>
+</html>
